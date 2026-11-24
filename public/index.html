@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Révision ADVF — Fiches mémo & 14 besoins de Henderson</title>
+<style>
+  :root {
+    --primary: #2a5d84;
+    --primary-dark: #1d4763;
+    --accent: #e8a13d;
+    --bg: #f3f6f9;
+    --card: #ffffff;
+    --text: #2c3540;
+    --muted: #6b7a89;
+    --border: #dbe3ea;
+    --ok: #2e8b57;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 1.15rem; font-weight: 600; }
+  header .badge {
+    background: var(--accent); color: #1d2b36;
+    font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 600;
+  }
+  nav { display: flex; gap: 0.4rem; margin-left: auto; }
+  nav button {
+    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+    padding: 0.4rem 0.9rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+  }
+  nav button.active { background: #fff; color: var(--primary); font-weight: 600; }
+  main { flex: 1; overflow: hidden; }
+  .view { display: none; height: 100%; }
+  .view.active { display: flex; }
+
+  /* ---------- Chat ---------- */
+  #chat-view { flex-direction: column; }
+  #messages {
+    flex: 1; overflow-y: auto; padding: 1.2rem; max-width: 860px; width: 100%; margin: 0 auto;
+  }
+  .msg { margin-bottom: 0.9rem; max-width: 82%; line-height: 1.5; font-size: 0.95rem;
+         white-space: pre-wrap; word-wrap: break-word; }
+  .msg.user { background: var(--primary); color: #fff; margin-left: auto;
+              padding: 0.7rem 1rem; border-radius: 14px 14px 3px 14px; }
+  .msg.bot { background: var(--card); border: 1px solid var(--border);
+             padding: 0.7rem 1rem; border-radius: 14px 14px 14px 3px; }
+  .msg.bot.error { background: #fdeaea; border-color: #e5b4b4; color: #8a2f2f; }
+  #composer {
+    display: flex; gap: 0.6rem; padding: 0.9rem 1.2rem; border-top: 1px solid var(--border);
+    background: var(--card); max-width: 860px; width: 100%; margin: 0 auto;
+  }
+  #input {
+    flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 0.9rem;
+    font-size: 0.95rem; resize: none; font-family: inherit; min-height: 46px; max-height: 140px;
+  }
+  #input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+  #send {
+    background: var(--primary); color: #fff; border: none; border-radius: 10px;
+    padding: 0 1.3rem; font-size: 0.95rem; cursor: pointer; font-weight: 600;
+  }
+  #send:disabled { opacity: 0.5; cursor: not-allowed; }
+  .suggestions { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0 1.2rem 0.6rem;
+                 max-width: 860px; width: 100%; margin: 0 auto; }
+  .suggestions button {
+    background: #fff; border: 1px solid var(--border); color: var(--primary);
+    border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.8rem; cursor: pointer;
+  }
+  .suggestions button:hover { border-color: var(--primary); }
+
+  /* ---------- Fiches ---------- */
+  #fiches-view { flex-direction: column; overflow: hidden; }
+  .fiches-scroll { flex: 1; overflow-y: auto; padding: 1.2rem; }
+  .intro {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem 1.2rem; max-width: 900px; margin: 0 auto 1.2rem; font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .intro h2 { font-size: 1rem; color: var(--primary); margin-bottom: 0.4rem; }
+  .intro ul { margin-left: 1.2rem; }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 0.9rem; max-width: 900px; margin: 0 auto 1.5rem;
+  }
+  .flip { cursor: pointer; height: 210px; perspective: 1000px; }
+  .flip-inner {
+    position: relative; width: 100%; height: 100%; transition: transform 0.5s;
+    transform-style: preserve-3d;
+  }
+  .flip.flipped .flip-inner { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; backface-visibility: hidden; border-radius: 12px;
+    padding: 0.9rem; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .face.front {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff; align-items: center; justify-content: center; text-align: center;
+  }
+  .face.front .num {
+    font-size: 2rem; font-weight: 700; color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .face.front h3 { font-size: 1rem; font-weight: 600; line-height: 1.3; }
+  .face.front .hint { font-size: 0.72rem; opacity: 0.7; margin-top: 0.8rem; }
+  .face.back {
+    background: var(--card); border: 1px solid var(--border);
+    transform: rotateY(180deg); font-size: 0.74rem; line-height: 1.45;
+  }
+  .face.back::-webkit-scrollbar { width: 5px; }
+  .face.back::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .face.back p { margin-bottom: 0.45rem; }
+  .face.back strong { color: var(--primary); }
+  section.bloc { max-width: 900px; margin: 0 auto 1.5rem; }
+  section.bloc h2 { font-size: 1rem; color: var(--primary); margin-bottom: 0.6rem; }
+  .regle {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; line-height: 1.5;
+  }
+  .regle b { color: var(--primary); }
+  @media (max-width: 600px) { .msg { max-width: 95%; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Révision ADVF</h1>
+  <span class="badge">14 besoins de Henderson</span>
+  <span class="badge">Cahier de suivi</span>
+  <nav>
+    <button id="tab-chat" class="active">💬 Chat révision</button>
+    <button id="tab-fiches">📒 Fiches mémo</button>
+  </nav>
+</header>
+
+<main>
+  <div id="chat-view" class="view active">
+    <div id="messages">
+      <div class="msg bot">Bonjour ! 👋 Pose ta question de révision ADVF : les 14 besoins de Henderson, le cahier de suivi, l'identification des besoins d'une personne...<br><br>Astuce : écris « fiche sur le besoin 5 » pour obtenir une fiche mémo structurée.</div>
+    </div>
+    <div class="suggestions">
+      <button data-q="Explique-moi la méthode du cahier de suivi pour identifier les besoins d'une personne.">Méthode du cahier de suivi ?</button>
+      <button data-q="Fiche sur le besoin 7 de Henderson, avec un exemple en ADVF.">Fiche : besoin 7</button>
+      <button data-q="Une personne âgée que j'aide mange très peu depuis 3 jours. Quels besoins de Henderson sont perturbés et que dois-je faire ?">Cas pratique : perte d'appétit</button>
+      <button data-q="Cite-moi les 14 besoins de Henderson dans l'ordre, avec un exemple ADVF pour chacun.">Les 14 besoins de mémoire</button>
+    </div>
+    <form id="composer">
+      <textarea id="input" placeholder="Ta question de révision… (Entrée pour envoyer, Maj+Entrée pour un saut de ligne)" rows="1"></textarea>
+      <button type="submit" id="send">Envoyer</button>
+    </form>
+  </div>
+
+  <div id="fiches-view" class="view">
+    <div class="fiches-scroll">
+      <div class="intro">
+        <h2>🧩 Comment réviser ?</h2>
+        <p>Clique sur une carte pour la retourner : recto = le besoin, verso = définition, signes d'un besoin perturbé et actions ADVF. Utilise le <b>cahier de suivi</b> : tu <b>observes</b>, tu <b>notes</b> (factuel, daté), tu <b>analyses</b> (quels besoins perturbés ?), tu <b>agis</b> (faire avec la personne), tu <b>transmets</b> (famille, équipe), tu <b>réévalues</b>.</p>
+      </div>
+      <div class="grid" id="grid"></div>
+      <section class="bloc">
+        <h2>📓 La méthode du cahier de suivi</h2>
+        <div id="cahier"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+
+/* ---- Navigation onglets ---- */
+function show(view) {
+  for (const v of document.querySelectorAll('.view')) v.classList.remove('active');
+  $('#' + view).classList.add('active');
+  $('#tab-chat').classList.toggle('active', view === 'chat-view');
+  $('#tab-fiches').classList.toggle('active', view === 'fiches-view');
+}
+$('#tab-chat').onclick = () => show('chat-view');
+$('#tab-fiches').onclick = () => show('fiches-view');
+
+/* ---- Fiches mémo ---- */
+fetch('/api/besoins')
+  .then((r) => r.json())
+  .then(({ besoins, cahierDeSuivi }) => {
+    const grid = $('#grid');
+    for (const b of besoins) {
+      const c = document.createElement('div');
+      c.className = 'flip';
+      c.innerHTML = `
+        <div class="flip-inner">
+          <div class="face front">
+            <div class="num">${b.num}</div>
+            <h3>${b.titre}</h3>
+            <div class="hint">Clique pour retourner ↻</div>
+          </div>
+          <div class="face back">
+            <p><strong>Définition :</strong> ${b.definition}</p>
+            <p><strong>Signes d'un besoin perturbé :</strong> ${b.signes}</p>
+            <p><strong>Actions :</strong> ${b.actions}</p>
+            <p><strong>En ADVF :</strong> ${b.advf}</p>
+          </div>
+        </div>`;
+      c.onclick = () => c.classList.toggle('flipped');
+      grid.appendChild(c);
+    }
+    const cahier = $('#cahier');
+    const item = (html) => {
+      const d = document.createElement('div');
+      d.className = 'regle';
+      d.innerHTML = html;
+      cahier.appendChild(d);
+    };
+    item(`<b>Définition :</b> ${cahierDeSuivi.definition}`);
+    item('<b>Objectifs :</b><ul>' + cahierDeSuivi.objectifs.map((o) => `<li>${o}</li>`).join('') + '</ul>');
+    cahierDeSuivi.methode.forEach((m) => item(m));
+    item('<b>Les règles d’or :</b><ul>' + cahierDeSuivi.regles.map((o) => `<li>${o}</li>`).join('') + '</ul>');
+  });
+
+/* ---- Chat ---- */
+const messagesEl = $('#messages');
+const input = $('#input');
+const sendBtn = $('#send');
+const history = [];
+
+function addMsg(role, text) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + (role === 'user' ? 'user' : 'bot') + (role === 'error' ? ' error' : '');
+  d.textContent = text;
+  messagesEl.appendChild(d);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return d;
+}
+
+async function send(text) {
+  const content = (text ?? input.value).trim();
+  if (!content) return;
+  input.value = '';
+  addMsg('user', content);
+  history.push({ role: 'user', content });
+  sendBtn.disabled = true;
+  const loading = addMsg('bot', '…');
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history })
+    });
+    const data = await res.json();
+    loading.remove();
+    if (!res.ok) throw new Error(data.error || 'Erreur inconnue');
+    addMsg('assistant', data.reply);
+    history.push({ role: 'assistant', content: data.reply });
+  } catch (err) {
+    loading.remove();
+    addMsg('error', '⚠️ ' + err.message);
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+$('#composer').addEventListener('submit', (e) => { e.preventDefault(); send(); });
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+document.querySelectorAll('.suggestions button').forEach((b) => {
+  b.onclick = () => send(b.dataset.q);
+});
+</script>
+</body>
+</html>
